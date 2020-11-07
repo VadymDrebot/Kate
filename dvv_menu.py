@@ -193,18 +193,54 @@ def new_student():
     add_window.mainloop()
     return
 
-def delete_student():
+def change_student():
+    b=20
+    global i
+    i=0
+    cur = con.cursor()
+    change_window = Toplevel()  # создание дополнительного(дочернего) окна
+    change_window.title("Изменение студента")  # заголовок окна
+    change_window.geometry("400x250+700+500")
 
+    def otmena_click():  # закрытие окна DELETE STUDENT без сохранения данных
+        change_window.after(3, lambda: change_window.destroy())
+
+    def vse_polya():
+        list = []
+        for item in cur:
+            list.append(item)
+        list_combo[i]['values']=list
+        list_combo[i].place(x=20, y=b)
+        b=b+20
+        i=i+1
+
+    combo_id = Combobox(change_window)
+    combo_name = Combobox(change_window)
+    list_combo =(combo_id, combo_name)
+    cur.execute("""SELECT st_id FROM students """)
+    vse_polya()
+    cur.execute("""SELECT name FROM students """)
+    vse_polya()
+   #     combo_id,combo_name = Combobox(change_window)
+    #    combo_id['values'] =list
+     #   combo_id.current(0)                        # установка варианта по умолчанию
+      #  combo_id.place(x=120, y=20)
+
+    change_window.mainloop()
+
+    return
+
+
+def delete_student():
     cur = con.cursor()
     del_window = Toplevel()             # создание дополнительного(дочернего) окна
     del_window.title("Удаление студента")  # заголовок окна
     del_window.geometry("400x250+700+500")
-    def otmena_click():       # закрытие окна DELETE STUDENT без сохранения данных
+    def otmena_click():               # закрытие окна DELETE STUDENT без сохранения данных
         del_window.after(3, lambda: del_window.destroy())
 
-    def delete():
-   #     cur = con.cursor()
-        del_st=combo_2.get()
+    def delete():                     # удаление элемента,найденного в SEARCH()
+        del_st=[combo_2.get()]          # значение второго Combobox
         if combo.get() == "ID":
             cur.execute("""DELETE FROM students WHERE st_id=?""", del_st)
         elif combo.get() == "Фамилии":
@@ -212,8 +248,8 @@ def delete_student():
         elif combo.get() == "Имени":
             cur.execute("""DELETE FROM students WHERE name=?""", del_st)
         con.commit()
+        del_window.after(3, lambda: del_window.destroy())
     def search():
-
         global combo_2
         list = []
         if combo.get() == "ID":
@@ -231,25 +267,16 @@ def delete_student():
         combo_2.current(0)
         return
 
-
-
     combo = Combobox(del_window)
     combo['values'] = ("ID", "Фамилии", "Имени")
-    combo.current(0)                       # установите вариант по умолчанию
+    combo.current(0)                       # установка варианта по умолчанию
     combo.place(x=120, y=20)
 
-    btn = Button(del_window, text="Найти по", command=search)  # конструктор BUTTON
-    btn.place(x=30, y=20)
-    btn = Button(del_window, text="Удалить студента", command=delete)  # конструктор BUTTON
-    btn.place(x=30, y=120)
-    btn = Button(del_window, text="Отмена", command=otmena_click)  # конструктор BUTTON
-    btn.place(x=170, y=120)
-
-
-
+    btn = Button(del_window, text="Найти по", command=search).place(x=30, y=20)
+    btn = Button(del_window, text="Удалить студента", command=delete).place(x=30, y=120)
+    btn = Button(del_window, text="Отмена", command=otmena_click).place(x=170, y=120)
 
     del_window.mainloop()
-
     return
 
 def find_student():
@@ -285,10 +312,8 @@ def find_student():
     combo.current(0)                                           # установите вариант по умолчанию
     combo.place(x=100,y=20)
 
-    btn = Button(add_window, text="    OK    ", command=find_click)  # конструктор BUTTON
-    btn.place(x=70, y=120)
-    btn = Button(add_window, text="Отмена", command=otmena_click)  # конструктор BUTTON
-    btn.place(x=140, y=120)
+    btn = Button(add_window, text="    OK    ", command=find_click).place(x=70, y=120)
+    btn = Button(add_window, text="Отмена", command=otmena_click).place(x=140, y=120)
 
     find_mes = StringVar()
     txt = Entry(add_window, textvariable=find_mes,width=33).place(x=20, y=60)  # ввод с клавиатуры
@@ -311,7 +336,7 @@ def main_window():
     new_menu.add_command(label="Новая группа")#,command=create_supply_group)
 
     mainmenu.add_cascade(label="   EDIT   ",menu=edit_menu)
-    edit_menu.add_command(label="Изменить инфо студента")#,command=add_string)
+    edit_menu.add_command(label="Изменить инфо студента",command=change_student)
     edit_menu.add_command(label="Изменить инфо факультете")
     edit_menu.add_separator()
     edit_menu.add_command(label="Удалить студента",command=delete_student)
