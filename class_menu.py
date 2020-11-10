@@ -1,13 +1,16 @@
 from tkinter import *
-class But_print:
-    def __init__(self):
-        self.but = Button(root)
-        self.but["text"] = "Печать"
-        self.but.bind("<Button-1>",self.printer)
-        self.but.pack()
-    def printer(self,event):
-        print ("Как всегда очередной 'Hello World!'")
+class main:
+  def __init__(self,title,geometry):
+    self.master = root
+    self.master.title=title
+    self.master.geometry=geometry
+    self.master.mainloop()
 
 root = Tk()
-obj = But_print()
-root.mainloop()
+
+window = Tk()
+window.title("Работа с базами данных")   # заголовок окна
+window.geometry("800x400+300+200")
+btn = Button(window, text=" OK ").place(x=10, y=10)
+
+window.mainloop()
