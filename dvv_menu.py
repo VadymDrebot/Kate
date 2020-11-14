@@ -4,7 +4,8 @@ from tkinter.ttk import Combobox
 con = sqlite3.connect("students.db")
 m_window = Tk()
 add=[]                                   # пустой список для добавления элементов
-
+list_fak=[]                               # список факультетов
+list_groups=[]                             #  список групп
 
 def clean_window():                      # очистка экрана
     for i in range(10,900,5):
@@ -31,11 +32,16 @@ def create_tables():
 #########################
     cur.execute("""DROP TABLE IF EXISTS groups""")
     cur.execute("""CREATE TABLE IF NOT EXISTS groups(
-                                group_id TEXT PRIMARY KEY,spec_name TEXT,number_of_students TEXT)"""),
-    group_list = [('f_1', 'Программирование','32'), ('f_2', 'Комп. сети', '30'),('f_3', 'Безопастность','31'),
-              ('e_1', 'Бухгалтерия', '28'), ('e_2', 'Внешняя экономика', '32'),('e_3', 'Торговля', '30'),
-                  ('m_1', 'Автомобилестроение', '27'), ('m_2', 'Сельхоз техника', '25')]
-    cur.executemany("""INSERT INTO groups VALUES(?,?,?)""", group_list)
+               group_id TEXT PRIMARY KEY,spec_name TEXT,fak_name TEXT,number_of_students TEXT)"""),
+    group_list = [('f_1', 'Программирование','ФАВТ','32'),
+                  ('f_2', 'Комп. сети','ФАВТ', '30'),
+                  ('f_3', 'Безопастность','ФАВТ','31'),
+                                      ('e_1', 'Бухгалтерия', 'Экономический', '28'),
+                                      ('e_2', 'Внешняя экономика', 'Экономический', '32'),
+                                      ('e_3', 'Торговля', 'Экономический', '30'),
+                  ('m_1', 'Автомобилестроение','Машиностроительный', '27'),
+                  ('m_2', 'Сельхоз техника','Машиностроительный', '25')]
+    cur.executemany("""INSERT INTO groups VALUES(?,?,?,?)""", group_list)
     con.commit()
     return
 
@@ -81,16 +87,16 @@ def view_politeh():#################    просмотр факультетов 
 def view_groups():#################    просмотр групп--таблица GROUPS
     clean_window()
     cur = con.cursor()
-    cur.execute("""SELECT group_id ,spec_name ,number_of_students FROM groups""")
-    head = ["  ID группы  ", "Специальность", "Кол-во студентов"]
+    cur.execute("""SELECT group_id ,spec_name ,fak_name TEXT,number_of_students FROM groups""")
+    head = ["  ID группы  ", "Специальность","Факультет", "Кол-во студентов"]
     b = 20
-    for i in range(3):
+    for i in range(4):
         Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
         b += 230
     a = 150
     for item in cur:
         b = 20
-        for i in range(3):
+        for i in range(4):
             Label(m_window, text=item[i], font="Arial 12").place(x=b, y=a)
             b += 230
         a += 30
@@ -99,9 +105,6 @@ def view_groups():#################    просмотр групп--таблиц
 ###################################
 
 def new_student():
-
-    list_fak=[]
-    list_groups=[]
     cur = con.cursor()
     add_window=Toplevel()                       # создание дополнительного(дочернего) окна
     add_window.title("Добавление нового студента")  # заголовок окна
@@ -162,7 +165,7 @@ def change_student():
     cur = con.cursor()
     change_window = Toplevel()                    # создание дополнительного(дочернего) окна
     change_window.title("Изменение инфо студента")  # заголовок окна
-    change_window.geometry("500x250+700+500")
+    change_window.geometry("500x350+700+500")
 
     def search():
         global combo_2                            # combo второго списка: выбор id\имени\фамилии
@@ -193,42 +196,79 @@ def change_student():
             cur.execute("""SELECT * FROM students WHERE surname=?""", change_st)
         elif combo.get() == "Имени":
             cur.execute("""SELECT * FROM students WHERE name=?""", change_st)
+
         for item in cur:
-            for i in range(3):        # вывод вертикально:id,имени и фамилии выбранного студента
+            for i in range(5):        # вывод вертикально:id,имени и фамилии выбранного студента
                 Label(change_window, text=item[i],font=14).place(x=10, y=b)
-                b+=45
+                b+=50
         Button(change_window, text="Изменить", command=change_id).place(x=90, y=120)
-        Button(change_window, text="Изменить", command=change_surname).place(x=90, y=160)
-        Button(change_window, text="Изменить", command=change_name).place(x=90, y=200)
+        Button(change_window, text="Изменить", command=change_surname).place(x=90, y=170)
+        Button(change_window, text="Изменить", command=change_name).place(x=90, y=220)
+        Button(change_window, text="Изменить", command=change_fak).place(x=90, y=270)
+        Button(change_window, text="Изменить", command=change_group).place(x=90, y=320)
+
     def change_id():
         global new_id
         new_id = StringVar()
-        Entry(change_window, textvariable=new_id,).place(x=180, y=125)
-        Button(change_window, text=" Принять ", command=admit_id).place(x=360, y=120)
+        Entry(change_window, textvariable=new_id,width=22).place(x=180, y=130)
+        Button(change_window, text=" Принять ", command=admit_id).place(x=380, y=120)
     def admit_id():                                # реакция на кнопку "ПРИНЯТЬ"
         list=[new_id.get(),item[0]]                # новое и старое ID
         cur.execute("""UPDATE students SET st_id=? WHERE st_id=? """,list)
         con.commit()
- ##########
+###########
     def change_surname():
         global new_surname
         new_surname = StringVar()
-        Entry(change_window, textvariable=new_surname,).place(x=180, y=165)
-        Button(change_window, text=" Принять ", command=admit_surname).place(x=360, y=160)
-
+        Entry(change_window, textvariable=new_surname,width=22).place(x=180, y=175)
+        Button(change_window, text=" Принять ", command=admit_surname).place(x=380, y=170)
     def admit_surname():
         list=[new_surname.get(),item[1]]              # новое и старое фамилия
         cur.execute("""UPDATE students SET surname=? WHERE surname=? """,list)
         con.commit()
+############
     def change_name():
         global new_name
         new_name = StringVar()
-        Entry(change_window, textvariable=new_name,).place(x=180, y=205)
-        Button(change_window, text=" Принять ", command=admit_name).place(x=360, y=200)
+        Entry(change_window, textvariable=new_name,width=22).place(x=180, y=225)
+        Button(change_window, text=" Принять ", command=admit_name).place(x=380, y=220)
     def admit_name():
         list=[new_name.get(),item[2]]                   # новое и старое имя
         cur.execute("""UPDATE students SET name=? WHERE name=? """,list)
         con.commit()
+###########
+    def change_fak():
+        global combo_fak_id
+        combo_fak_id = Combobox(change_window)
+        combo_fak_id.place(x=180, y=270)
+        cur.execute("""SELECT fak_id FROM politeh """)
+        for item in cur:
+            list_fak.append(item)                   # список факультетов
+        combo_fak_id['values'] = list_fak
+        combo_fak_id.current(0)
+        Button(change_window, text=" Принять ", command=admit_fak).place(x=380, y=270)
+        return
+    def admit_fak():
+        list = [combo_fak_id.get(), item[0]]
+        cur.execute("""UPDATE students SET fak_id=? WHERE st_id=? """, list)
+        con.commit()
+        return
+###########
+    def change_group():
+        combo_group_id = Combobox(change_window)
+        combo_group_id.place(x=180, y=320)
+        cur.execute("""SELECT group_id FROM groups """)
+        for item in cur:
+            list_groups.append(item)  # список групп
+        combo_group_id['values'] = list_groups
+        combo_group_id.current(0)
+        Button(change_window, text=" Принять ", command=admit_group).place(x=380, y=320)
+        return
+    def admit_group():
+        list = [combo_group_id.get(), item[0]]
+        cur.execute("""UPDATE students SET group_id=? WHERE st_id=? """, list)
+        con.commit()
+        return
 
     Label(change_window, text="Найти по").place(x=10, y=20)
     combo = Combobox(change_window)
@@ -240,6 +280,44 @@ def change_student():
     change_window.mainloop()
     return
 
+def change_delete_group():
+    cur = con.cursor()
+    change_delete_group_window = Toplevel(m_window)  # создание дополнительного(дочернего) окна
+    change_delete_group_window.title("Изменение таблицы GROUPS")  # заголовок окна
+    change_delete_group_window.geometry("500x210+700+500")
+    def change():
+        global new_name
+        global old_group_id
+        old_group_id=combo.get()
+        new_name = StringVar()
+        Label(change_delete_group_window, text="Введите новый ID:").place(x=10, y=90)
+        Entry(change_delete_group_window,textvariable=new_name,width=22).place(x=150, y=90)
+        Button(change_delete_group_window, text=" Принять", command=admit).place(x=335, y=90)
+        return
+    def delete():
+        a=[combo.get()]
+        cur.execute("""DELETE FROM groups WHERE group_id=?""",a)
+        con.commit()
+        return
+    def admit():
+        list=[new_name.get(),old_group_id]
+        cur.execute("""UPDATE groups SET group_id=? WHERE group_id=? """, list)
+        con.commit()
+        return
+    Label(change_delete_group_window, text="Выбор группы").place(x=10, y=20)
+    Button(change_delete_group_window, text="Изменить", command=change).place(x=255, y=18)
+    Button(change_delete_group_window, text=" Удалить", command=delete).place(x=335, y=18)
+    combo = Combobox(change_delete_group_window,width=10)
+    cur.execute("""SELECT group_id FROM groups """)
+    for item in cur:
+        list_groups.append(item)                       # список групп
+    combo['values'] = list_groups
+    combo.place(x=130, y=18)
+    combo.current(0)
+
+
+    change_delete_group_window.mainloop()
+    return
 
 def delete_student():
 
@@ -292,14 +370,11 @@ def delete_student():
     del_window.mainloop()
     return
 
-
-
-
 def find_student():
-    add_window = Toplevel()   # создание дополнительного(дочернего) окна
-    add_window.title("Поиск студента")  # заголовок окна
-    add_window.geometry("400x250+700+500")
-    def otmena_click():       # закрытие окна ADD STRING без сохранения данных
+    add_window = Toplevel()                 # создание дополнительного(дочернего) окна
+    add_window.title("Поиск студента")      # заголовок окна
+    add_window.geometry("450x250+700+500")
+    def otmena_click():                     # закрытие окна без сохранения данных
         add_window.after(3, lambda: add_window.destroy())
 
     def find_click():
@@ -307,16 +382,14 @@ def find_student():
         search = [find_mes.get(),]
         cur = con.cursor()
         if condition=="ID":
-            cur.execute("""SELECT st_id ,surname ,name ,telefon FROM students WHERE st_id=?""",search)
+            cur.execute("""SELECT st_id ,surname ,name ,fak_id ,group_id ,score FROM students WHERE st_id=?""",search)
         elif condition=="Фамилии":
-            cur.execute("""SELECT st_id ,surname ,name ,telefon FROM students WHERE surname=?""", search)
+            cur.execute("""SELECT st_id ,surname ,name ,fak_id ,group_id ,score FROM students WHERE surname=?""", search)
         elif condition =="Имени":
-            cur.execute("""SELECT st_id ,surname ,name ,telefon FROM students WHERE name=?""", search)
-        elif condition == "Номеру тел.":
-            cur.execute("""SELECT st_id ,surname ,name ,telefon FROM students WHERE telefon=?""", search)
+            cur.execute("""SELECT st_id ,surname ,name ,fak_id ,group_id ,score FROM students WHERE name=?""", search)
         count = 0
         for el in cur:
-            for i in range(4):
+            for i in range(6):
                 Label(add_window, text=el,font="Arial 14").place(x=30, y=170)
                 count = 1
         if count == 0:
@@ -324,7 +397,7 @@ def find_student():
 
     Label(add_window, text="Поиск по:").place(x=20, y=20)
     combo = Combobox(add_window)
-    combo['values'] = ("ID","Фамилии","Имени" ,"Номеру тел.")
+    combo['values'] = ("ID","Фамилии","Имени" )
     combo.current(0)                                           # установите вариант по умолчанию
     combo.place(x=100,y=20)
 
@@ -339,20 +412,20 @@ def find_student():
 def main_window():
     global main_lbl
     m_window.title("Работа с базами данных")   # заголовок окна
-    m_window.geometry("800x400+300+200")
+    m_window.geometry("850x400+300+200")
     mainmenu = Menu(m_window)
     new_menu = Menu()
     edit_menu= Menu()
     view_menu= Menu()
     mainmenu.add_cascade(label="   FILE   ", menu=new_menu)
     new_menu.add_command(label="Новая база студентов", command=create_tables)
-    new_menu.add_command(label="Загрузить базу студентов")#, command=create_students)
+ #   new_menu.add_command(label="Загрузить базу студентов")#, command=create_students)
     new_menu.add_separator()
     new_menu.add_command(label="Новый студент",command=new_student)
 
     mainmenu.add_cascade(label="   EDIT   ",menu=edit_menu)
     edit_menu.add_command(label="Изменить инфо студента",command=change_student)
-    edit_menu.add_command(label="Изменить инфо факультете")
+    edit_menu.add_command(label="Удалить/изменить группу",command=change_delete_group)
     edit_menu.add_separator()
     edit_menu.add_command(label="Удалить студента",command=delete_student)
 
