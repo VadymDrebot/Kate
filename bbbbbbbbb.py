@@ -1,7 +1,7 @@
 from tkinter import *
 root = Tk()
 class Window:
-    def __init__(self, root, title, geometry):
+    def __init__(self,root, title, geometry):
         self.root = root
         self.root.title(title)
         self.root.geometry(geometry)
@@ -29,6 +29,7 @@ class ChildWindow:
         self.root.title(title)
         self.root.geometry(geometry)
         self.root.focus_set()
+
 def main():
     window1=Window(root,"aaaa",'500x500+300+200')
     l1 = window1.add_label("label")
