@@ -1,7 +1,7 @@
 from tkinter import *
 import sqlite3
 from tkinter.ttk import Combobox
-con = sqlite3.connect("suppliers.db")
+con = sqlite3.connect("students.db")
 m_window = Tk()
 add=[]                                   # пустой список для добавления элементов
 
@@ -13,63 +13,53 @@ def clean_window():                      # очистка экрана
         l.place(x=20, y=i)
     return
 ########################################################
-def create_students():
+def create_tables():
     cur = con.cursor()
     cur.execute("""DROP TABLE IF EXISTS students""")
     cur.execute("""CREATE TABLE IF NOT EXISTS students (
-                    st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,telefon TEXT) """)
-    users = [('st_1', 'Иванов', 'Иван', '0671111111'), ('st_2', 'Петров', 'Петр','0672222222'), ('st_3', 'Сидоров', 'Сеня','0972154878'),
-             ('st_4','Семенов','Ваня ','0683265458'), ('st_5','Васильков','Вася','0681259845'), ('st_6','Соколов','Федя','0502564875')]
-    cur.executemany("""INSERT INTO students VALUES(?,?,?,?)""", users)
+                    st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT) """)
+    students_list = [('st_1', 'Иванов', 'Иван', 'fak_f','f_1','98'), ('st_2', 'Петров', 'Петр','fak_f','f_1','75'),
+             ('st_3', 'Сидоров', 'Сеня','fak_e','e_1','93'),('st_4','Семенов','Ваня ','fak_e','e_1','65'),
+             ('st_5','Васильков','Вася','fak_m','m_1','88'), ('st_6','Соколов','Федя','fak_m','m_1','78')]
+    cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
 ##########################
     cur.execute("""DROP TABLE IF EXISTS politeh""")
     cur.execute("""CREATE TABLE IF NOT EXISTS politeh(
-                            fak_id TEXT PRIMARY KEY,fak_name,dekan)""")
-    fakultets = [('fak_1','ФАВТ','Козловский'), ('fak_2', 'Экономический','Петровский'),('fak_3','Машиностроительный','Семановский')]
-    cur.executemany("""INSERT INTO politeh VALUES(?,?,?)""", fakultets)
+                            fak_id TEXT PRIMARY KEY,fak_name TEXT,dekan TEXT)""")
+    fakultets_list = [('fak_f','ФАВТ','Козловский'), ('fak_e', 'Экономический','Петровский'),('fak_m','Машиностроительный','Семановский')]
+    cur.executemany("""INSERT INTO politeh VALUES(?,?,?)""", fakultets_list)
 #########################
-    cur.execute("""DROP TABLE IF EXISTS favt""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS favt(
-                                favt_sp_id TEXT PRIMARY KEY,favt_sp_name,favt_number_of_groups,favt_number_of_students)""")
-    f_list = [('f_sp_1', 'Программирование', '4','120'), ('f_sp_2', 'Комп. сети', '3','90'),
-            ('f_sp_3', 'Безопастность', '2','60'),('f_sp_4', 'Кодитование','2','52')]
-    cur.executemany("""INSERT INTO favt VALUES(?,?,?,?)""", f_list)
-#################################
-    cur.execute("""DROP TABLE IF EXISTS economic""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS economic(
-                                ec_sp_id TEXT PRIMARY KEY,ec_sp_name,ec_number_of_groups , ec_number_of_students)""")
-    ec_list = [('ec_sp_1', 'Бухгалтерия', '4', '150'), ('ec_sp_2', 'Внешняя экономика', '3', '80'),
-            ('ec_sp_3', 'Торговля', '2', '62'), ('tc_sp_4', 'Экономика производства', '2', '46')]
-    cur.executemany("""INSERT INTO economic VALUES(?,?,?,?)""", ec_list)
-###################################
-    cur.execute("""DROP TABLE IF EXISTS mashine""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS mashine(
-                                    m_sp_id TEXT PRIMARY KEY , m_sp_name , m_number_of_groups , m_number_of_students)""")
-    m_list = [('m_sp_1', 'Автопроектирование', '3', '120'), ('m_sp_2', 'Военная техника', '3', '76'),
-               ('m_sp_3', 'Автомобилестроение', '2', '62'), ('m_sp_4', 'Сельскохозяйственная', '1', '48')]
-    cur.executemany("""INSERT INTO mashine VALUES(?,?,?,?)""", m_list)
+    cur.execute("""DROP TABLE IF EXISTS groups""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS groups(
+                                group_id TEXT PRIMARY KEY,spec_name TEXT,number_of_students TEXT)"""),
+    group_list = [('f_1', 'Программирование','32'), ('f_2', 'Комп. сети', '30'),('f_3', 'Безопастность','31'),
+              ('e_1', 'Бухгалтерия', '28'), ('e_2', 'Внешняя экономика', '32'),('e_3', 'Торговля', '30'),
+                  ('m_1', 'Автомобилестроение', '27'), ('m_2', 'Сельхоз техника', '25')]
+    cur.executemany("""INSERT INTO groups VALUES(?,?,?)""", group_list)
     con.commit()
     return
+
+################################# ПРОСМОТР ТРЕХ ТАБЛИЦ
 
 def view_students():     ############# просмотр всех студентов-----база STUDENTS
     clean_window()
     cur = con.cursor()
-    cur.execute("""SELECT st_id,surname,name,telefon FROM students """)
-    head=["ID","Фамилия","   Имя   ","Телефон"]
+    cur.execute("""SELECT st_id,surname,name,fak_id ,group_id ,score FROM students """)
+    head=["ID студента"," Фамилия ","    Имя    "," ID фак-та "," ID группы ","Средний бал"]
     b = 20
-    for i in range(4):
+    for i in range(6):
         main_lbl = Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
         b += 120
     a = 100
     for item in cur:
         b=20
-        for i in range(4):
+        for i in range(6):
             main_lbl=Label(m_window, text=item[i],font="Arial 14").place(x=b, y=a)
             b+=120
         a += 30
     return
 
-def view_fakultets():#################    просмотр факультетов  --- база POLITEH
+def view_politeh():#################    просмотр факультетов  --- база POLITEH
     clean_window()
     cur = con.cursor()
     cur.execute("""SELECT fak_id,fak_name,dekan FROM politeh """)
@@ -88,79 +78,51 @@ def view_fakultets():#################    просмотр факультето�
         a += 30
     return
 
-def view_favt():#################    просмотр факультета ФАВТ
+def view_groups():#################    просмотр групп--таблица GROUPS
     clean_window()
     cur = con.cursor()
-    cur.execute("""SELECT favt_sp_id ,favt_sp_name,favt_number_of_groups,favt_number_of_students FROM favt""")
-    head = ["ID", "Название", " Кол-во групп","Кол-во студентов"]
+    cur.execute("""SELECT group_id ,spec_name ,number_of_students FROM groups""")
+    head = ["  ID группы  ", "Специальность", "Кол-во студентов"]
     b = 20
-    for i in range(4):
+    for i in range(3):
         Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
-        b += 200
+        b += 230
     a = 150
     for item in cur:
         b = 20
-        for i in range(4):
+        for i in range(3):
             Label(m_window, text=item[i], font="Arial 12").place(x=b, y=a)
-            b += 200
+            b += 230
         a += 30
     return
 
-def view_economic():#################    просмотр факультета ФАВТ
-    clean_window()
-    cur = con.cursor()
-    cur.execute("""SELECT ec_sp_id,ec_sp_name,ec_number_of_groups,ec_number_of_students FROM economic""")
-    head = ["ID", "Название", " Кол-во групп","Кол-во студентов"]
-    b = 20
-    for i in range(4):
-        Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
-        b += 200
-    a = 150
-    for item in cur:
-        b = 20
-        for i in range(4):
-            Label(m_window, text=item[i], font="Arial 12").place(x=b, y=a)
-            b += 200
-        a += 30
-    return
-
-def view_mashine():#################    просмотр факультета ФАВТ
-    clean_window()
-    cur = con.cursor()
-    cur.execute("""SELECT m_sp_id ,m_sp_name, m_number_of_groups , m_number_of_students FROM mashine""")
-    head = ["ID", "Название", " Кол-во групп","Кол-во студентов"]
-    b = 20
-    for i in range(4):
-        Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
-        b += 200
-    a = 150
-    for item in cur:
-        b = 20
-        for i in range(4):
-            Label(m_window, text=item[i], font="Arial 12").place(x=b, y=a)
-            b += 200
-        a += 30
-    return
+###################################
 
 def new_student():
+
+    list_fak=[]
+    list_groups=[]
+    cur = con.cursor()
     add_window=Toplevel()                       # создание дополнительного(дочернего) окна
-    add_window.title("Работа с базами данных")  # заголовок окна
-    add_window.geometry("350x250+700+500")
-    def otmena_click():                    # закрытие окна ADD STRING без сохранения данных
+    add_window.title("Добавление нового студента")  # заголовок окна
+    add_window.geometry("370x280+700+500")
+    def otmena_click():                         # закрытие окна ADD STRING без сохранения данных
         add_window.after(3, lambda: add_window.destroy())
-    def add_click():                           # кнопка в окне ADD STRING--"добавления новой строки"
+    def add_click():                            # кнопка в окне ADD STRING--"добавления новой строки"
         for i in range(4):
             add.append(message[i].get())
+        add.append(combo_fak_id.get())          #  пятый элемент-- из COMBOBOX
+        add.append(combo_group_id.get())         #  шестой элемент-- из COMBOBOX
         cur = con.cursor()
-        cur.execute("""INSERT INTO students (st_id ,surname ,name ,telefon) VALUES (?,?,?,?)""", add)
+        cur.execute("""INSERT INTO students (st_id ,surname ,name ,score,fak_id,group_id) VALUES (?,?,?,?,?,?)""", add)
         con.commit()
         add_window.after(3, lambda: add_window.destroy())  # закрытие окна через 3 млсек
 
-    line = ["Введите ID","Введите фамилию: ","Введите имя:","Введите тел.:"]
+    line = ["Введите ID","Введите фамилию: ","Введите имя:","Средний бал","Выберите фак-т:","Выберите группу:"]
     a=10
-    for i in range(4):
+    for i in range(6):
         x = line[i]
-        input_lbl = Label(add_window, text=x).place(x=20, y=a)              # неактивна надпись слева
+        Label(add_window, text=x).place(x=20, y=a)              # неактивна надпись слева
         a+=30
     message1 = StringVar()
     message2 = StringVar()
@@ -169,10 +131,28 @@ def new_student():
     message=[message1,message2,message3,message4]
     a = 10
     for i in range(4):
-        Entry(add_window, textvariable=message[i]).place(x=150, y=a)      # ввод с клавиатуры
+        Entry(add_window, textvariable=message[i],width=23).place(x=150, y=a)      # ввод с клавиатуры
         a+=30
-    Button(add_window, text="    OK    ", command=add_click).place(x=100, y=150) # конструктор BUTTON
-    Button(add_window, text="Отмена", command=otmena_click).place(x=165, y=150)  # конструктор BUTTON
+
+    combo_fak_id = Combobox(add_window)
+    combo_fak_id.place(x=150, y=132)
+    combo_group_id = Combobox(add_window)
+    combo_group_id.place(x=150, y=162)
+
+    cur.execute("""SELECT fak_id FROM politeh """)
+    for item in cur:
+        list_fak.append(item)                        # список факультетов
+    combo_fak_id['values'] = list_fak
+    combo_fak_id.current(0)
+
+    cur.execute("""SELECT group_id FROM groups """)
+    for item in cur:
+        list_groups.append(item)                      #  список групп
+    combo_group_id['values'] = list_groups
+    combo_group_id.current(0)
+
+    Button(add_window, text="    OK    ", command=add_click).place(x=100, y=220) # конструктор BUTTON
+    Button(add_window, text="Отмена", command=otmena_click).place(x=165, y=220)  # конструктор BUTTON
 
     add_window.mainloop()
     return
@@ -180,7 +160,7 @@ def new_student():
 def change_student():
     list = []
     cur = con.cursor()
-    change_window = Toplevel()             # создание дополнительного(дочернего) окна
+    change_window = Toplevel()                    # создание дополнительного(дочернего) окна
     change_window.title("Изменение инфо студента")  # заголовок окна
     change_window.geometry("500x250+700+500")
 
@@ -194,7 +174,7 @@ def change_student():
         elif combo.get() == "Имени":
             cur.execute("""SELECT name  FROM students """)
         for item in cur:
-            list.append(item)        # список id или имен или фамилий в зависимости от состояния combo
+            list.append(item)                      # список id или имен или фамилий в зависимости от состояния combo
         Label(change_window, text="Выбор").place(x=10, y=60)
         Button(change_window, text="   OK   ", command=choose).place(x=280, y=55)
         combo_2 = Combobox(change_window)
@@ -365,11 +345,10 @@ def main_window():
     edit_menu= Menu()
     view_menu= Menu()
     mainmenu.add_cascade(label="   FILE   ", menu=new_menu)
-    new_menu.add_command(label="Новая база студентов", command=create_students)
+    new_menu.add_command(label="Новая база студентов", command=create_tables)
     new_menu.add_command(label="Загрузить базу студентов")#, command=create_students)
     new_menu.add_separator()
     new_menu.add_command(label="Новый студент",command=new_student)
-    new_menu.add_command(label="из класса")#,command=ggggroup)
 
     mainmenu.add_cascade(label="   EDIT   ",menu=edit_menu)
     edit_menu.add_command(label="Изменить инфо студента",command=change_student)
@@ -379,16 +358,11 @@ def main_window():
 
     mainmenu.add_cascade(label="   VIEW   ",menu=view_menu)
     view_menu.add_command(label="Просмотреть всех студентов  ",command=view_students)
-    view_menu.add_command(label="Просмотреть факультеты", command=view_fakultets)
-    view_menu.add_separator()
-    view_menu.add_command(label="Просмотреть Фавт", command=view_favt)
-    view_menu.add_command(label="Просмотреть Экономический", command=view_economic)
-    view_menu.add_command(label="Просмотреть Машиностроительный", command=view_mashine)
+    view_menu.add_command(label="Просмотреть факультеты", command=view_politeh)
+    view_menu.add_command(label="Просмотреть группы", command=view_groups)
     view_menu.add_separator()
     view_menu.add_command(label="Найти студента",command=find_student)
     m_window.config(menu=mainmenu)
-    main_lbl = Label(m_window, text="Добро пожаловать!!!", font="Arial 18").place(x=130, y=200)
-
     m_window.mainloop()
     return
 
