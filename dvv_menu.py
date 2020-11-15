@@ -1,8 +1,8 @@
 from tkinter import *
 import sqlite3
 from tkinter.ttk import Combobox
-
 con = sqlite3.connect("students.db")
+cur = con.cursor()
 m_window = Tk()
 add=[]                                   # пустой список для добавления элементов
 list_fak=[]                               # список факультетов
@@ -14,49 +14,60 @@ def clean_window():                      # очистка экрана
             "                                                                                                          ")
         l.place(x=20, y=i)
     return
-########################################################
+################################### создание трех таблиц
 def create_tables():
-    cur = con.cursor()
     cur.execute("""PRAGMA foreign_keys = ON""")
-
+    cur.execute("""DROP TABLE IF EXISTS students""")
     cur.execute("""DROP TABLE IF EXISTS politeh""")
+    cur.execute("""DROP TABLE IF EXISTS groups""")
     cur.execute("""CREATE TABLE IF NOT EXISTS politeh(
-                            fak_id TEXT PRIMARY KEY,fak_name TEXT,dekan TEXT)""")
-    fakultets_list = [('fak_f','ФАВТ','Козловский'), ('fak_e', 'Экономический','Петровский'),('fak_m','Машиностроительный','Семановский')]
+                            fak_id TEXT ,fak_name TEXT,dekan TEXT)""")
+    fakultets_list = [('fak_f','ФАВТ','Козловский'),
+                      ('fak_e', 'Экономический','Петровский'),
+                      ('fak_m','Машиностроительный','Семановский')]
     cur.executemany("""INSERT INTO politeh VALUES(?,?,?)""", fakultets_list)
 #########################
-    cur.execute("""DROP TABLE IF EXISTS groups""")
+
     cur.execute("""CREATE TABLE IF NOT EXISTS groups(
-               group_id TEXT PRIMARY KEY,spec_name TEXT,fak_name TEXT,number_of_students TEXT)"""),
-    group_list = [('f_1', 'Программирование','ФАВТ','32'),
-                  ('f_2', 'Комп. сети','ФАВТ', '30'),
-                  ('f_3', 'Безопастность','ФАВТ','31'),
-                                      ('e_1', 'Бухгалтерия', 'Экономический', '28'),
-                                      ('e_2', 'Внешняя экономика', 'Экономический', '32'),
-                                      ('e_3', 'Торговля', 'Экономический', '30'),
-                  ('m_1', 'Автомобилестроение','Машиностроительный', '27'),
-                  ('m_2', 'Сельхоз техника','Машиностроительный', '25')]
+               group_id TEXT PRIMARY KEY,spec_name TEXT,fak_name TEXT,number_of_students TEXT NULL)""")
+    group_list = [('f_1', 'Программирование','ФАВТ',0),
+                  ('f_2', 'Комп. сети','ФАВТ', 0),
+                  ('f_3', 'Безопастность','ФАВТ',0),
+                                      ('e_1', 'Бухгалтерия', 'Экономический', 0),
+                                      ('e_2', 'Внешняя экономика', 'Экономический', 0),
+                                      ('e_3', 'Торговля', 'Экономический', 0),
+                  ('m_1', 'Автомобилестроение','Машиностроительный', 0),
+                  ('m_2', 'Сельхоз техника','Машиностроительный', 0)]
     cur.executemany("""INSERT INTO groups VALUES(?,?,?,?)""", group_list)
-    cur.execute("""DROP TABLE IF EXISTS students""")
+#########################
+
     cur.execute("""CREATE TABLE IF NOT EXISTS students (
                         st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
-                        FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE SET NULL ON UPDATE CASCADE,
-                        FOREIGN KEY (fak_id) REFERENCES politeh (fak_id) ON DELETE SET NULL ON UPDATE CASCADE) """)
-    students_list = [('st_1', 'Иванов', 'Иван', 'fak_f', 'f_1', '98'), ('st_2', 'Петров', 'Петр', 'fak_f', 'f_1', '75'),
+                        FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
+    students_list = [('st_1', 'Иванов', 'Иван', 'fak_f', 'f_1', '98'),
+                     ('st_2', 'Петров', 'Петр', 'fak_f', 'f_1', '75'),
                      ('st_3', 'Сидоров', 'Сеня', 'fak_e', 'e_1', '93'),
                      ('st_4', 'Семенов', 'Ваня ', 'fak_e', 'e_1', '65'),
                      ('st_5', 'Васильков', 'Вася', 'fak_m', 'm_1', '88'),
-                     ('st_6', 'Соколов', 'Федя', 'fak_m', 'm_1', '78')]
+                     ('st_6', 'Соколов', 'Федя', 'fak_m', 'f_2', '78')]
     cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
 
+    count_students_in_groups()
     con.commit()
     return
 
+################################# подсчет студентов в каждой группе
+def count_students_in_groups():
+    list_of_group_id = [('f_1'), ('f_2'), ('f_3'), ('e_1'), ('e_2'), ('e_3'), ('m_1'), ('m_2')]
+    for i in range(8):
+        cur.execute("""SELECT COUNT(*) FROM students WHERE group_id==?""", [(list_of_group_id[i])])
+        cur.execute("""UPDATE groups SET number_of_students=? WHERE group_id==?""",
+                    [(cur.fetchone()[0]), (list_of_group_id[i])])
+    con.commit()
+    return
 ################################# ПРОСМОТР ТРЕХ ТАБЛИЦ
-
 def view_students():     ############# просмотр всех студентов-----база STUDENTS
     clean_window()
-    cur = con.cursor()
     cur.execute("""SELECT st_id,surname,name,fak_id ,group_id ,score FROM students """)
     head=["ID студента"," Фамилия ","    Имя    "," ID фак-та "," ID группы ","Средний бал"]
     b = 20
@@ -74,7 +85,6 @@ def view_students():     ############# просмотр всех студент�
 
 def view_politeh():#################    просмотр факультетов  --- база POLITEH
     clean_window()
-    cur = con.cursor()
     cur.execute("""SELECT fak_id,fak_name,dekan FROM politeh """)
     Label(m_window,text="факультеты ПОЛИТЕХА",font="Arial 18").place(x=160, y=10)
     head = ["ID", "Факультет", " Декан  "]
@@ -93,7 +103,7 @@ def view_politeh():#################    просмотр факультетов 
 
 def view_groups():#################    просмотр групп--таблица GROUPS
     clean_window()
-    cur = con.cursor()
+    count_students_in_groups()
     cur.execute("""SELECT group_id ,spec_name ,fak_name TEXT,number_of_students FROM groups""")
     head = ["  ID группы  ", "Специальность","Факультет", "Кол-во студентов"]
     b = 20
@@ -113,7 +123,6 @@ def view_groups():#################    просмотр групп--таблиц
 
 def new_student():
     list_groups = []
-    cur = con.cursor()
     add_window=Toplevel()                       # создание дополнительного(дочернего) окна
     add_window.title("Добавление нового студента")  # заголовок окна
     add_window.geometry("370x280+700+500")
@@ -171,7 +180,6 @@ def new_student():
 def change_student():
     list_groups = []
     list = []
-    cur = con.cursor()
     change_window = Toplevel()                    # создание дополнительного(дочернего) окна
     change_window.title("Изменение инфо студента")  # заголовок окна
     change_window.geometry("500x350+700+500")
@@ -292,7 +300,6 @@ def change_student():
 
 def change_delete_group():
     list_groups=[]
-    cur = con.cursor()
     change_delete_group_window = Toplevel(m_window)  # создание дополнительного(дочернего) окна
     change_delete_group_window.title("Изменение таблицы GROUPS")  # заголовок окна
     change_delete_group_window.geometry("500x210+700+500")
@@ -307,8 +314,12 @@ def change_delete_group():
         return
     def delete():
         a=[combo.get()]
-        cur.execute("""DELETE FROM groups WHERE group_id=?""",a)
-        con.commit()
+        try:
+            cur.execute("""DELETE FROM groups WHERE group_id=?""",a)
+            con.commit()
+        except:
+            Label(change_delete_group_window, text="Удаление группы невозможно,т.к."
+                                                   "в этой группе есть студенты",font=12).place(x=10, y=80)
         return
     def admit():
         list=[new_name.get(),old_group_id]
@@ -326,13 +337,10 @@ def change_delete_group():
     combo.place(x=130, y=18)
     combo.current(0)
 
-
     change_delete_group_window.mainloop()
     return
 
 def delete_student():
-
-    cur = con.cursor()
     del_window = Toplevel()             # создание дополнительного(дочернего) окна
     del_window.title("Удаление студента")  # заголовок окна
     del_window.geometry("400x250+700+500")
