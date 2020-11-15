@@ -1,6 +1,7 @@
 from tkinter import *
 import sqlite3
 from tkinter.ttk import Combobox
+
 con = sqlite3.connect("students.db")
 m_window = Tk()
 add=[]                                   # пустой список для добавления элементов
@@ -16,14 +17,8 @@ def clean_window():                      # очистка экрана
 ########################################################
 def create_tables():
     cur = con.cursor()
-    cur.execute("""DROP TABLE IF EXISTS students""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS students (
-                    st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT) """)
-    students_list = [('st_1', 'Иванов', 'Иван', 'fak_f','f_1','98'), ('st_2', 'Петров', 'Петр','fak_f','f_1','75'),
-             ('st_3', 'Сидоров', 'Сеня','fak_e','e_1','93'),('st_4','Семенов','Ваня ','fak_e','e_1','65'),
-             ('st_5','Васильков','Вася','fak_m','m_1','88'), ('st_6','Соколов','Федя','fak_m','m_1','78')]
-    cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
-##########################
+    cur.execute("""PRAGMA foreign_keys = ON""")
+
     cur.execute("""DROP TABLE IF EXISTS politeh""")
     cur.execute("""CREATE TABLE IF NOT EXISTS politeh(
                             fak_id TEXT PRIMARY KEY,fak_name TEXT,dekan TEXT)""")
@@ -42,6 +37,18 @@ def create_tables():
                   ('m_1', 'Автомобилестроение','Машиностроительный', '27'),
                   ('m_2', 'Сельхоз техника','Машиностроительный', '25')]
     cur.executemany("""INSERT INTO groups VALUES(?,?,?,?)""", group_list)
+    cur.execute("""DROP TABLE IF EXISTS students""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS students (
+                        st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
+                        FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE SET NULL ON UPDATE CASCADE,
+                        FOREIGN KEY (fak_id) REFERENCES politeh (fak_id) ON DELETE SET NULL ON UPDATE CASCADE) """)
+    students_list = [('st_1', 'Иванов', 'Иван', 'fak_f', 'f_1', '98'), ('st_2', 'Петров', 'Петр', 'fak_f', 'f_1', '75'),
+                     ('st_3', 'Сидоров', 'Сеня', 'fak_e', 'e_1', '93'),
+                     ('st_4', 'Семенов', 'Ваня ', 'fak_e', 'e_1', '65'),
+                     ('st_5', 'Васильков', 'Вася', 'fak_m', 'm_1', '88'),
+                     ('st_6', 'Соколов', 'Федя', 'fak_m', 'm_1', '78')]
+    cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
+
     con.commit()
     return
 
@@ -105,6 +112,7 @@ def view_groups():#################    просмотр групп--таблиц
 ###################################
 
 def new_student():
+    list_groups = []
     cur = con.cursor()
     add_window=Toplevel()                       # создание дополнительного(дочернего) окна
     add_window.title("Добавление нового студента")  # заголовок окна
@@ -161,6 +169,7 @@ def new_student():
     return
 
 def change_student():
+    list_groups = []
     list = []
     cur = con.cursor()
     change_window = Toplevel()                    # создание дополнительного(дочернего) окна
@@ -255,6 +264,7 @@ def change_student():
         return
 ###########
     def change_group():
+        global combo_group_id
         combo_group_id = Combobox(change_window)
         combo_group_id.place(x=180, y=320)
         cur.execute("""SELECT group_id FROM groups """)
@@ -281,6 +291,7 @@ def change_student():
     return
 
 def change_delete_group():
+    list_groups=[]
     cur = con.cursor()
     change_delete_group_window = Toplevel(m_window)  # создание дополнительного(дочернего) окна
     change_delete_group_window.title("Изменение таблицы GROUPS")  # заголовок окна
