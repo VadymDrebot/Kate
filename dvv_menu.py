@@ -108,7 +108,7 @@ def view_groups():#################    просмотр групп--таблиц
     head = ["  ID группы  ", "Специальность","Факультет", "Кол-во студентов"]
     b = 20
     for i in range(4):
-        Label(m_window, text=head[i], font="Arial 12").place(x=b, y=50)
+        Label(m_window, text=head[i], font="Arial 12").place(x = b, y = 50)
         b += 230
     a = 150
     for item in cur:
