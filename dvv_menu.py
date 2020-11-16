@@ -42,8 +42,8 @@ def create_tables():
 #########################
 
     cur.execute("""CREATE TABLE IF NOT EXISTS students (
-                        st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
-                        FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
+            st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
+            FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
     students_list = [('st_1', 'Иванов', 'Иван', 'fak_f', 'f_1', '98'),
                      ('st_2', 'Петров', 'Петр', 'fak_f', 'f_1', '75'),
                      ('st_3', 'Сидоров', 'Сеня', 'fak_e', 'e_1', '93'),
@@ -55,8 +55,34 @@ def create_tables():
     count_students_in_groups()
     con.commit()
     return
-
 ################################# подсчет студентов в каждой группе
+def load_database():
+    from openpyxl import load_workbook
+    cur.execute("""PRAGMA foreign_keys = ON""")
+    cur.execute("""DROP TABLE IF EXISTS students""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS students (
+                      st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
+                      FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
+    wb = load_workbook('polit.xlsx')
+#    for sheetname in wb.sheetnames:    # для каждого листа из книги...
+ #       print(sheetname)  # печать каждого листа
+    a = list()                          # список для ОДНОГО студента
+    students_list=[]                    # список(кортеж) всех студентов
+    ws = wb['students_excel']           # ws= лист "students_excel" из книги "polit"
+    all_rows = list(ws.rows)
+    for i in range(1,len(all_rows)):     # чередуем строки из листа
+        for cell in all_rows[i]:         # чередуем  ячейки каждой строки
+            a.append(cell.value)         # достаем ЗНАЧЕНИЕ каждлй ячейки и вставляем в список
+
+        students_list.append(a)
+        a = list()
+    cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
+    count_students_in_groups()
+    con.commit()
+
+
+    return
+#################################
 def count_students_in_groups():
     list_of_group_id = [('f_1'), ('f_2'), ('f_3'), ('e_1'), ('e_2'), ('e_3'), ('m_1'), ('m_2')]
     for i in range(8):
@@ -438,7 +464,7 @@ def main_window():
     view_menu= Menu()
     mainmenu.add_cascade(label="   FILE   ", menu=new_menu)
     new_menu.add_command(label="Новая база студентов", command=create_tables)
- #   new_menu.add_command(label="Загрузить базу студентов")#, command=create_students)
+    new_menu.add_command(label="Загрузить базу студентов", command=load_database)
     new_menu.add_separator()
     new_menu.add_command(label="Новый студент",command=new_student)
 
