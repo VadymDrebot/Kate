@@ -4,16 +4,14 @@ from tkinter.ttk import Combobox
 con = sqlite3.connect("students.db")
 cur = con.cursor()
 m_window = Tk()
-add=[]                                    # пустой список для добавления элементов
-list_of_faks=[]                               # список факультетов
-list_of_groups=[]
+add=[]                                                          # пустой список для добавления элементов
+list_of_faks=['fak_f','fak_e','fak_m']                       # список факультетов
 
-list_of_fak_groups=[]   #'f_1','f_2','f_3'
-list_of_e_groups=[]     #'e_1','e_2','e_3'
-list_of_m_groups=[]     #'m_1','m_2'                       #  список групп
+list_of_fak_groups=['f_1','f_2','f_3']
+list_of_e_groups=['e_1','e_2','e_3']
+list_of_m_groups=['m_1','m_2']                                #  список групп
 
-list_of_all_groups = []
-
+list_of_all_groups = ['f_1','f_2','f_3','e_1','e_2','e_3','m_1','m_2']
 
 
 ###################################    очистка экрана
@@ -46,7 +44,7 @@ def create_lists():
     cur.execute("""SELECT group_id FROM groups WHERE fak_name=
                 (SELECT fak_name FROM politeh WHERE fak_id=?)""",list_of_faks[2])
     for item in cur:
-        list_of_m_groups.append(item)
+        list_of_m_groups.append(str(item))
 
 
         ###################################    в меню выбрано "Стандартная база студентов"
@@ -120,18 +118,18 @@ def load_tables(a,b,c):
                                 ON DELETE RESTRICT ON UPDATE CASCADE)""")
     cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
 
-    create_lists()
+#    create_lists()
     count_students_in_groups()
 
     con.commit()
     return
 ###################################    подсчет студентов в каждой группе и запись рез-та в таблицу GROUPS
 def count_students_in_groups():
-
     for i in range(len(list_of_all_groups)):
-        cur.execute("""SELECT COUNT(*) FROM students WHERE group_id=?""",list_of_all_groups[i])
-        a=cur.fetchone()
-        list=[(a),(list_of_all_groups[i])]
+        cur.execute("""SELECT COUNT(*) FROM students WHERE group_id=?""",[list_of_all_groups[i]])
+        a=cur.fetchone()[0]
+        b=list_of_all_groups[i]
+        list=[a,b]
         cur.execute("""UPDATE groups SET number_of_students=? WHERE group_id=?""",list)
     con.commit()
     return
