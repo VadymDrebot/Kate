@@ -4,32 +4,65 @@ from tkinter.ttk import Combobox
 con = sqlite3.connect("students.db")
 cur = con.cursor()
 m_window = Tk()
-add=[]                                   # пустой список для добавления элементов
-list_fak=[]                               # список факультетов
-list_groups=[]                             #  список групп
+add=[]                                    # пустой список для добавления элементов
+list_of_faks=[]                               # список факультетов
+list_of_groups=[]
 
+list_of_fak_groups=[]   #'f_1','f_2','f_3'
+list_of_e_groups=[]     #'e_1','e_2','e_3'
+list_of_m_groups=[]     #'m_1','m_2'                       #  список групп
+
+list_of_all_groups = []
+
+
+
+###################################    очистка экрана
 def clean_window():                      # очистка экрана
-    for i in range(10,900,5):
-        l=Label(m_window, text="                                                                                         "
-            "                                                                                                          ")
-        l.place(x=20, y=i)
+    for i in range(10,1000,5):
+        l=Label(m_window, text="                                                                                                   "
+            "                                          "
+                               "                                                                          ").place(x=20, y=i)
     return
-################################### создание трех таблиц
-def create_tables():
-    cur.execute("""PRAGMA foreign_keys = ON""")
-    cur.execute("""DROP TABLE IF EXISTS students""")
-    cur.execute("""DROP TABLE IF EXISTS politeh""")
-    cur.execute("""DROP TABLE IF EXISTS groups""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS politeh(
-                            fak_id TEXT ,fak_name TEXT,dekan TEXT)""")
+###################################
+def create_lists():
+    cur.execute("""SELECT fak_id FROM politeh """)
+    for item in cur:
+        list_of_faks.append(item)
+
+    cur.execute("""SELECT group_id FROM groups """)
+    for item in cur:
+        list_of_all_groups.append(item)
+
+    cur.execute("""SELECT group_id FROM groups WHERE fak_name=
+                (SELECT fak_name FROM politeh WHERE fak_id=?)""",list_of_faks[0])
+    for item in cur:
+        list_of_fak_groups.append(item)
+
+    cur.execute("""SELECT group_id FROM groups WHERE fak_name=
+                (SELECT fak_name FROM politeh WHERE fak_id=?)""",list_of_faks[1])
+    for item in cur:
+        list_of_e_groups.append(item)
+
+    cur.execute("""SELECT group_id FROM groups WHERE fak_name=
+                (SELECT fak_name FROM politeh WHERE fak_id=?)""",list_of_faks[2])
+    for item in cur:
+        list_of_m_groups.append(item)
+
+
+        ###################################    в меню выбрано "Стандартная база студентов"
+def choose_standart_tables():
+    a,b,c=data_for_standart_tables()
+    load_tables(a,b,c)
+###################################    в меню выбрано "Загрузить базу студентов"
+def choose_loaded_tables():
+    a,b,c=data_for_loaded_database()
+    load_tables(a,b,c)
+###################################    создаются данные для стандартной базы
+def data_for_standart_tables():
+    fakultets_list, group_list, students_list = [], [], []
     fakultets_list = [('fak_f','ФАВТ','Козловский'),
                       ('fak_e', 'Экономический','Петровский'),
                       ('fak_m','Машиностроительный','Семановский')]
-    cur.executemany("""INSERT INTO politeh VALUES(?,?,?)""", fakultets_list)
-#########################
-
-    cur.execute("""CREATE TABLE IF NOT EXISTS groups(
-               group_id TEXT PRIMARY KEY,spec_name TEXT,fak_name TEXT,number_of_students TEXT NULL)""")
     group_list = [('f_1', 'Программирование','ФАВТ',0),
                   ('f_2', 'Комп. сети','ФАВТ', 0),
                   ('f_3', 'Безопастность','ФАВТ',0),
@@ -38,60 +71,71 @@ def create_tables():
                                       ('e_3', 'Торговля', 'Экономический', 0),
                   ('m_1', 'Автомобилестроение','Машиностроительный', 0),
                   ('m_2', 'Сельхоз техника','Машиностроительный', 0)]
-    cur.executemany("""INSERT INTO groups VALUES(?,?,?,?)""", group_list)
-#########################
-
-    cur.execute("""CREATE TABLE IF NOT EXISTS students (
-            st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
-            FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
     students_list = [('st_1', 'Иванов', 'Иван', 'fak_f', 'f_1', '98'),
                      ('st_2', 'Петров', 'Петр', 'fak_f', 'f_1', '75'),
                      ('st_3', 'Сидоров', 'Сеня', 'fak_e', 'e_1', '93'),
                      ('st_4', 'Семенов', 'Ваня ', 'fak_e', 'e_1', '65'),
                      ('st_5', 'Васильков', 'Вася', 'fak_m', 'm_1', '88'),
-                     ('st_6', 'Соколов', 'Федя', 'fak_m', 'f_2', '78')]
-    cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
-
-    count_students_in_groups()
-    con.commit()
-    return
-################################# подсчет студентов в каждой группе
-def load_database():
-    from openpyxl import load_workbook
+                     ('st_6', 'Соколов', 'Федя', 'fak_f', 'f_2', '78')]
+    return fakultets_list,group_list,students_list
+###################################    создаются данные для загруженной базы
+def data_for_loaded_database():
+    fakultets_list, group_list, students_list = [], [], []
+    from tkinter.filedialog import askopenfilename   #модуль для открытия файлов в диалоговом окне
+    from openpyxl import load_workbook               # модуль для работы с .xlsx(excel) файлами
+    file = askopenfilename()                        # создается окно для открытия файла
+    wb = load_workbook(file)                         # в wb(workbook) загружаем файл(книга)
+    fin_list=[group_list,fakultets_list,students_list]
+    y=0
+    for sheetname in wb.sheetnames:                 # для каждого листа из книги...
+        a = list()                                  # список для ОДНОГО студента
+        ws = wb[sheetname]                          # ws= лист (напр.:"students_excel") из книги "polit"
+        all_rows = list(ws.rows)
+        for i in range(1,len(all_rows)):            # чередуем строки из листа
+            for cell in all_rows[i]:                # чередуем  ячейки каждой строки
+                a.append(cell.value)                # достаем ЗНАЧЕНИЕ каждлй ячейки и вставляем в список
+            fin_list[y].append(a)                   # список(кортеж) всех студентов
+            a = list()
+        y+=1
+    return fakultets_list,group_list,students_list
+###################################    непосредственно загрузка данных(списков) в базу данных
+def load_tables(a,b,c):
+    fakultets_list, group_list, students_list=a,b,c
     cur.execute("""PRAGMA foreign_keys = ON""")
     cur.execute("""DROP TABLE IF EXISTS students""")
+    cur.execute("""DROP TABLE IF EXISTS politeh""")
+    cur.execute("""DROP TABLE IF EXISTS groups""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS politeh(
+               fak_id TEXT ,fak_name TEXT,dekan TEXT)""")
+    cur.executemany("""INSERT INTO politeh VALUES(?,?,?)""", fakultets_list)
+    ##########################
+    cur.execute("""CREATE TABLE IF NOT EXISTS groups(
+               group_id TEXT PRIMARY KEY,spec_name TEXT,fak_name TEXT,number_of_students TEXT NULL)""")
+    cur.executemany("""INSERT INTO groups VALUES(?,?,?,?)""", group_list)
+    #########################
     cur.execute("""CREATE TABLE IF NOT EXISTS students (
-                      st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
-                      FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE RESTRICT ON UPDATE CASCADE)""")
-    wb = load_workbook('polit.xlsx')
-#    for sheetname in wb.sheetnames:    # для каждого листа из книги...
- #       print(sheetname)  # печать каждого листа
-    a = list()                          # список для ОДНОГО студента
-    students_list=[]                    # список(кортеж) всех студентов
-    ws = wb['students_excel']           # ws= лист "students_excel" из книги "polit"
-    all_rows = list(ws.rows)
-    for i in range(1,len(all_rows)):     # чередуем строки из листа
-        for cell in all_rows[i]:         # чередуем  ячейки каждой строки
-            a.append(cell.value)         # достаем ЗНАЧЕНИЕ каждлй ячейки и вставляем в список
-
-        students_list.append(a)
-        a = list()
+               st_id TEXT PRIMARY KEY,surname TEXT,name TEXT,fak_id TEXT,group_id TEXT,score TEXT,
+               FOREIGN KEY (group_id) REFERENCES groups (group_id)
+                                ON DELETE RESTRICT ON UPDATE CASCADE)""")
     cur.executemany("""INSERT INTO students VALUES(?,?,?,?,?,?)""", students_list)
+
+    create_lists()
     count_students_in_groups()
+
     con.commit()
-
-
     return
-#################################
+###################################    подсчет студентов в каждой группе и запись рез-та в таблицу GROUPS
 def count_students_in_groups():
-    list_of_group_id = [('f_1'), ('f_2'), ('f_3'), ('e_1'), ('e_2'), ('e_3'), ('m_1'), ('m_2')]
-    for i in range(8):
-        cur.execute("""SELECT COUNT(*) FROM students WHERE group_id==?""", [(list_of_group_id[i])])
-        cur.execute("""UPDATE groups SET number_of_students=? WHERE group_id==?""",
-                    [(cur.fetchone()[0]), (list_of_group_id[i])])
+
+    for i in range(len(list_of_all_groups)):
+        cur.execute("""SELECT COUNT(*) FROM students WHERE group_id=?""",list_of_all_groups[i])
+        a=cur.fetchone()
+        list=[(a),(list_of_all_groups[i])]
+        cur.execute("""UPDATE groups SET number_of_students=? WHERE group_id=?""",list)
     con.commit()
     return
-################################# ПРОСМОТР ТРЕХ ТАБЛИЦ
+###################################    ПРОСМОТР ТРЕХ ТАБЛИЦ
 def view_students():     ############# просмотр всех студентов-----база STUDENTS
     clean_window()
     cur.execute("""SELECT st_id,surname,name,fak_id ,group_id ,score FROM students """)
@@ -144,16 +188,15 @@ def view_groups():#################    просмотр групп--таблиц
             b += 230
         a += 30
     return
-
 ###################################
-
 def new_student():
-    list_groups = []
+ #   list_groups = []
     add_window=Toplevel()                       # создание дополнительного(дочернего) окна
     add_window.title("Добавление нового студента")  # заголовок окна
     add_window.geometry("370x280+700+500")
     def otmena_click():                         # закрытие окна ADD STRING без сохранения данных
         add_window.after(3, lambda: add_window.destroy())
+
     def add_click():                            # кнопка в окне ADD STRING--"добавления новой строки"
         for i in range(4):
             add.append(message[i].get())
@@ -185,16 +228,10 @@ def new_student():
     combo_group_id = Combobox(add_window)
     combo_group_id.place(x=150, y=162)
 
-    cur.execute("""SELECT fak_id FROM politeh """)
-    for item in cur:
-        list_fak.append(item)                        # список факультетов
-    combo_fak_id['values'] = list_fak
+    combo_fak_id['values'] = list_of_faks          # список факультетов
     combo_fak_id.current(0)
 
-    cur.execute("""SELECT group_id FROM groups """)
-    for item in cur:
-        list_groups.append(item)                      #  список групп
-    combo_group_id['values'] = list_groups
+    combo_group_id['values'] = list_of_all_groups       #  список групп
     combo_group_id.current(0)
 
     Button(add_window, text="    OK    ", command=add_click).place(x=100, y=220) # конструктор BUTTON
@@ -204,7 +241,6 @@ def new_student():
     return
 
 def change_student():
-    list_groups = []
     list = []
     change_window = Toplevel()                    # создание дополнительного(дочернего) окна
     change_window.title("Изменение инфо студента")  # заголовок окна
@@ -220,7 +256,7 @@ def change_student():
         elif combo.get() == "Имени":
             cur.execute("""SELECT name  FROM students """)
         for item in cur:
-            list.append(item)                      # список id или имен или фамилий в зависимости от состояния combo
+            list.append(item)                      # список id ИЛИ имен ИЛИ фамилий в зависимости от состояния combo
         Label(change_window, text="Выбор").place(x=10, y=60)
         Button(change_window, text="   OK   ", command=choose).place(x=280, y=55)
         combo_2 = Combobox(change_window)
@@ -231,7 +267,7 @@ def change_student():
 
     def choose():
         b=120
-        global item
+        global output_item
         change_st=[combo_2.get()]          # значение второго Combobox
         if combo.get() == "ID":
             cur.execute("""SELECT * FROM students WHERE st_id=?""", change_st)
@@ -240,23 +276,23 @@ def change_student():
         elif combo.get() == "Имени":
             cur.execute("""SELECT * FROM students WHERE name=?""", change_st)
 
-        for item in cur:
-            for i in range(5):        # вывод вертикально:id,имени и фамилии выбранного студента
-                Label(change_window, text=item[i],font=14).place(x=10, y=b)
+        for output_item in cur:
+            for i in range(5):        # вывод вертикально:id,имени,фамилии,фак-та и группы выбранного студента
+                Label(change_window, text=output_item[i],font=13).place(x=10, y=b)
                 b+=50
         Button(change_window, text="Изменить", command=change_id).place(x=90, y=120)
         Button(change_window, text="Изменить", command=change_surname).place(x=90, y=170)
         Button(change_window, text="Изменить", command=change_name).place(x=90, y=220)
         Button(change_window, text="Изменить", command=change_fak).place(x=90, y=270)
         Button(change_window, text="Изменить", command=change_group).place(x=90, y=320)
-
+###########
     def change_id():
         global new_id
         new_id = StringVar()
         Entry(change_window, textvariable=new_id,width=22).place(x=180, y=130)
         Button(change_window, text=" Принять ", command=admit_id).place(x=380, y=120)
     def admit_id():                                # реакция на кнопку "ПРИНЯТЬ"
-        list=[new_id.get(),item[0]]                # новое и старое ID
+        list=[new_id.get(),output_item[0]]                # новое и старое ID
         cur.execute("""UPDATE students SET st_id=? WHERE st_id=? """,list)
         con.commit()
 ###########
@@ -266,17 +302,17 @@ def change_student():
         Entry(change_window, textvariable=new_surname,width=22).place(x=180, y=175)
         Button(change_window, text=" Принять ", command=admit_surname).place(x=380, y=170)
     def admit_surname():
-        list=[new_surname.get(),item[1]]              # новое и старое фамилия
+        list=[new_surname.get(),output_item[1]]              # новое и старое фамилия
         cur.execute("""UPDATE students SET surname=? WHERE surname=? """,list)
         con.commit()
-############
+###########
     def change_name():
         global new_name
         new_name = StringVar()
         Entry(change_window, textvariable=new_name,width=22).place(x=180, y=225)
         Button(change_window, text=" Принять ", command=admit_name).place(x=380, y=220)
     def admit_name():
-        list=[new_name.get(),item[2]]                   # новое и старое имя
+        list=[new_name.get(),output_item[2]]                   # новое и старое имя
         cur.execute("""UPDATE students SET name=? WHERE name=? """,list)
         con.commit()
 ###########
@@ -284,32 +320,42 @@ def change_student():
         global combo_fak_id
         combo_fak_id = Combobox(change_window)
         combo_fak_id.place(x=180, y=270)
-        cur.execute("""SELECT fak_id FROM politeh """)
-        for item in cur:
-            list_fak.append(item)                   # список факультетов
-        combo_fak_id['values'] = list_fak
+        combo_fak_id['values'] = list_of_faks
         combo_fak_id.current(0)
         Button(change_window, text=" Принять ", command=admit_fak).place(x=380, y=270)
         return
     def admit_fak():
-        list = [combo_fak_id.get(), item[0]]
+        list = [combo_fak_id.get(), output_item[0]]  # новое и старое значение. output_item взят из функции choose()
         cur.execute("""UPDATE students SET fak_id=? WHERE st_id=? """, list)
+        if combo_fak_id.get()==list_of_faks[0]:
+            new_group=list_of_fak_groups[0]
+        elif combo_fak_id.get()==list_of_faks[1]:
+            new_group=list_of_e_groups[0]
+        elif combo_fak_id.get()==list_of_faks[2]:
+            new_group=list_of_m_groups[0]
+        list = [new_group,output_item[0]]
+        cur.execute("""UPDATE students SET group_id=? WHERE st_id=? """,list)
         con.commit()
         return
 ###########
     def change_group():
+        choosen_groups=[]
         global combo_group_id
         combo_group_id = Combobox(change_window)
         combo_group_id.place(x=180, y=320)
-        cur.execute("""SELECT group_id FROM groups """)
-        for item in cur:
-            list_groups.append(item)  # список групп
-        combo_group_id['values'] = list_groups
+        if output_item[3]==list_of_faks[0]:
+            choosen_groups=list_of_fak_groups
+        elif output_item[3]==list_of_faks[1]:
+            choosen_groups=list_of_e_groups
+        elif output_item[3] == list_of_faks[2]:
+            choosen_groups = list_of_m_groups
+
+        combo_group_id['values'] = choosen_groups
         combo_group_id.current(0)
         Button(change_window, text=" Принять ", command=admit_group).place(x=380, y=320)
         return
     def admit_group():
-        list = [combo_group_id.get(), item[0]]
+        list = [combo_group_id.get(), output_item[0]]
         cur.execute("""UPDATE students SET group_id=? WHERE st_id=? """, list)
         con.commit()
         return
@@ -325,7 +371,6 @@ def change_student():
     return
 
 def change_delete_group():
-    list_groups=[]
     change_delete_group_window = Toplevel(m_window)  # создание дополнительного(дочернего) окна
     change_delete_group_window.title("Изменение таблицы GROUPS")  # заголовок окна
     change_delete_group_window.geometry("500x210+700+500")
@@ -345,7 +390,7 @@ def change_delete_group():
             con.commit()
         except:
             Label(change_delete_group_window, text="Удаление группы невозможно,т.к."
-                                                   "в этой группе есть студенты",font=12).place(x=10, y=80)
+                                              "в этой группе есть студенты",font=12).place(x=10, y=80)
         return
     def admit():
         list=[new_name.get(),old_group_id]
@@ -356,10 +401,7 @@ def change_delete_group():
     Button(change_delete_group_window, text="Изменить", command=change).place(x=255, y=18)
     Button(change_delete_group_window, text=" Удалить", command=delete).place(x=335, y=18)
     combo = Combobox(change_delete_group_window,width=10)
-    cur.execute("""SELECT group_id FROM groups """)
-    for item in cur:
-        list_groups.append(item)                       # список групп
-    combo['values'] = list_groups
+    combo['values'] = list_of_groups
     combo.place(x=130, y=18)
     combo.current(0)
 
@@ -455,7 +497,6 @@ def find_student():
     return
 
 def main_window():
-    global main_lbl
     m_window.title("Работа с базами данных")   # заголовок окна
     m_window.geometry("850x400+300+200")
     mainmenu = Menu(m_window)
@@ -463,8 +504,8 @@ def main_window():
     edit_menu= Menu()
     view_menu= Menu()
     mainmenu.add_cascade(label="   FILE   ", menu=new_menu)
-    new_menu.add_command(label="Новая база студентов", command=create_tables)
-    new_menu.add_command(label="Загрузить базу студентов", command=load_database)
+    new_menu.add_command(label="Стандартная база студентов", command=choose_standart_tables)
+    new_menu.add_command(label="Загрузить базу студентов", command=choose_loaded_tables)
     new_menu.add_separator()
     new_menu.add_command(label="Новый студент",command=new_student)
 
