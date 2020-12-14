@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter.ttk import Radiobutton
 import sqlite3
-con = sqlite3.connect("suppliers.db")
+con = sqlite3.connect("../raznoe/suppliers.db")
 add = []
 def click_button():
     if sel.get() == 1:

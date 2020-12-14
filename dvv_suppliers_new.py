@@ -25,7 +25,7 @@ def search(): ############## поиск  и вывод на экран рабо�
 
 ##############################################################
 
-con=sqlite3.connect("suppliers.db")
+con=sqlite3.connect("../raznoe/suppliers.db")
 cur = con.cursor()
 #####
 cur.execute("""PRAGMA foreign_keys = ON""")

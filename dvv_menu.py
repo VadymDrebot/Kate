@@ -1,7 +1,7 @@
 from tkinter import *
 import sqlite3
 from tkinter.ttk import Combobox
-con = sqlite3.connect("students.db")
+con = sqlite3.connect("../raznoe/students.db")
 cur = con.cursor()
 m_window = Tk()
 add=[]                                                          # пустой список для добавления элементов
